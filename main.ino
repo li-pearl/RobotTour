@@ -1,39 +1,18 @@
-//========================================================================
-// TopFinishKits.com Template Program for Robot Tour
-//
-//  Board: Arduino Uno
+//  Board: Arduino Mega 2560
 //  Vehicle: D4
 //  Version: 2.1
-//
-// The information contained in this program is for general education 
-// purposes only. The information is provided by TopFinishKits.com and 
-// while we endeavor to keep the information up to date and correct, 
-// we make no representations or warranties of any kind, express or 
-// implied, about the completeness, accuracy, reliability, suitability 
-// or availability with respect to the this program, or the website,
-// information, products, services, or related graphics contained on
-// the website for any purpose. Any reliance you place on such 
-// information is therefore strictly at your own risk.
-//
-// Change Log:
-//    2023-11-24  - Modified MotionLogic to only use minimum speed at the end
-//                  of a move.
-//                - Changed MotionLogic debug to work with the Serial Plotter.
-//                - Minimum Speed is a constant set with the other constants.
-//
-//========================================================================
+
 #include <Arduino.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>    // this library is needed for the 20x4 display
+// #include <LiquidCrystal_I2C.h>  
 
-#define VERSION           "D4 2.1"
+#define VERSION "D4 2.1"
 
-#define DISPLAY_PRESENT        0  // set to 1 if the 20x4 I2C Display is present
+#define DISPLAY_PRESENT 0  // set to 1 if we end up using the 20x4 I2C Display
 
 //
-//  Board: Ardunio Uno
-//  DEFINE ALL I/O PIN CONNECTIONS
-//    *** DO NOT CHANGE ***
+//  Board: Ardunio Uno TODO: Change to Mega pin constants
+//  DEFINE ALL I/O PIN CONNECTIONS CONSTANTS
 //
 #define PIN_MTR1_ENCA          2
 #define PIN_MTR2_ENCA          3
@@ -48,16 +27,14 @@
 #define PIN_SONIC_TRIGGER     12
 #define PIN_LED               13
 
-
-//************************* ADJUST THE FOLLOWING TO MATCH YOUR ROBOT ****************************
-
+//TODO: Adjust to new motors and encoders
 #define ENCODER_COUNTS_PER_REV  540   // Set to the number of encoder pulses per wheel revolution
 #define MM_PER_REV              220   // Set to the number of mm per wheel revolution (Hence : Diameter * Pi)
 #define ENCODER_COUNTS_90_DEG   200   // Set to the number of encoder pulses to make a 90 degree turn
 #define SPEED_MIN               120    // Minimum speed (pulses/second) use at the end of individual moves
 
 
-LiquidCrystal_I2C display(0x27,20,4);  // set the LCD address to 0x27 for a 20 chars and 4 line display
+// LiquidCrystal_I2C display(0x27,20,4);  // set the LCD address to 0x27 for a 20 chars and 4 line display
 
 unsigned long usLast;
 long usecElapsed;
@@ -89,11 +66,10 @@ unsigned long timerPBStartOff;
 
 unsigned long timerDelay;
 
-#define MAX_COMMANDS    60        // Maximum number of motion commands allowed
+#define MAX_COMMANDS 60        // Maximum number of motion commands allowed
 
-//======================================================================================
+
 // Command object is used to hold a list of commands to be executed
-//======================================================================================
 class Command
 {
   private:
@@ -146,11 +122,11 @@ class Command
 
 };
 
-Command cmdQueue;
+Command commandQueue;
 
 //
 //  List of possible vehicle motion commands
-//   -- Additional motion commands can be added which will require code to execute
+//   -- Additional motion commands can be added (requires code to execute)
 //
 #define VEHICLE_START_WAIT      1       // Wait for the start button to be pressed
 #define VEHICLE_START           2       // First motion command after button press
@@ -164,35 +140,30 @@ Command cmdQueue;
 #define VEHICLE_STOP            1000
 #define VEHICLE_ABORT           2000    // Used to abort the current movement list and stop the robot
 
-//======================================================================================
-//======================================================================================
 // Loads the command queue with the robots commands to be executed during a run
-//======================================================================================
-//======================================================================================
+
 void loadCommandQueue() {
 
-  cmdQueue.clear();
-  cmdQueue.add(VEHICLE_START_WAIT);     // do not change this line - waits for start pushbutton
-  cmdQueue.add(VEHICLE_START);          // do not change this line
+  commandQueue.clear();
+  commandQueue.add(VEHICLE_START_WAIT);     // do not change this line - waits for start pushbutton
+  commandQueue.add(VEHICLE_START);          // do not change this line
 
   // Define robot movement speeds
   // Speed is encoder pulses per second.
-  // There is a maximum speed.  Testing will be required to learn this speed.
-  //    SETTING THE SPEEDS ABOVE THE MOTOR'S MAXIMUM SPEED WILL CAUSE STRANGE RESULTS
-      cmdQueue.add(VEHICLE_SET_MOVE_SPEED,500);     // Speed used for forward movements  
-      cmdQueue.add(VEHICLE_SET_TURN_SPEED,300);     // Speed used for left or right turns
-      cmdQueue.add(VEHICLE_SET_ACCEL,400);         // smaller is softer   larger is quicker and less accurate moves
+  // There is a maximum speed. Find max speed through testing. Don't set the speeds about motor max
+      commandQueue.add(VEHICLE_SET_MOVE_SPEED,500);     // Speed used for forward movements  
+      commandQueue.add(VEHICLE_SET_TURN_SPEED,300);     // Speed used for left or right turns
+      commandQueue.add(VEHICLE_SET_ACCEL,400);         // smaller is softer   larger is quicker and less accurate moves
 
-        // Example list of robot movements
-        // This block is modified for each tournament
-      cmdQueue.add(VEHICLE_FORWARD,500);
-      cmdQueue.add(VEHICLE_TURN_LEFT);
-      cmdQueue.add(VEHICLE_FORWARD,500);
-      cmdQueue.add(VEHICLE_TURN_LEFT);
-      cmdQueue.add(VEHICLE_FORWARD,500);
-      cmdQueue.add(VEHICLE_TURN_LEFT);
-      cmdQueue.add(VEHICLE_FORWARD,500);
-      cmdQueue.add(VEHICLE_TURN_LEFT);
+      //Test Command Schedule (square)
+      commandQueue.add(VEHICLE_FORWARD,500);
+      commandQueue.add(VEHICLE_TURN_LEFT);
+      commandQueue.add(VEHICLE_FORWARD,500);
+      commandQueue.add(VEHICLE_TURN_LEFT);
+      commandQueue.add(VEHICLE_FORWARD,500);
+      commandQueue.add(VEHICLE_TURN_LEFT);
+      commandQueue.add(VEHICLE_FORWARD,500);
+      commandQueue.add(VEHICLE_TURN_LEFT);
         
 
       // cmdQueue.add(VEHICLE_FORWARD,830); 
@@ -222,19 +193,17 @@ void loadCommandQueue() {
       // cmdQueue.add(VEHICLE_FORWARD,420); 
 
 
-          // This MUST be the last command.  
+      // This MUST be the last command.  
       cmdQueue.add(VEHICLE_FINISHED);
 
 }
 
-//======================================================================================
 // Motion object (like a library) that calculates the acceleration used for motor speed
 // control.
 // 
 // Distance is encoder pulses
 // Speed is encoder pulses per second
 // Accel is encoder pulses per second^2
-//======================================================================================
 class MotionLogic
 {
   private:
@@ -282,8 +251,9 @@ class MotionLogic
 
     inline void incrEncoder() { countEncoder++; };
 
-    inline void debugOn() { debugPrint = 1; };   // used this function to turn on debug print statements
-                                                 // recommended to only turn on debug for left or right motor.  NOT both.
+    // use this function to turn on debug print statements
+    // recommended to only turn on debug for left or right motor.  NOT both.
+    inline void debugOn() { debugPrint = 1; };   
     inline int debugState() { return debugPrint; };
 
     MotionLogic() {
@@ -361,7 +331,7 @@ class MotionLogic
       }
       float tAtSpeed = distAtSpeed / (float) speedTarget;
 
-        // times are in microseconds
+      // times are in microseconds
       timeAccel = 0;
       timeAtSpeed = tAccel * 1000000;
       timeDecel = timeAtSpeed + tAtSpeed * 1000000;
@@ -459,9 +429,7 @@ class MotionLogic
       long perror = posProfile - countEncoder;
       int serror = speedProfile - speedActual;
     
-          // This program uses a PI loop to control speed
-          // This loop is NOT tuned.  Meaning testing is required to tune the loop
-          // which will provide the best preformance
+      // This program uses a PI loop to control speed. TODO: Test to tune PI loop
       pwmLoopI += serror / 4;
       pwmLoopP = serror / 2; 
         
@@ -498,20 +466,16 @@ class MotionLogic
 MotionLogic mtrLeft;
 MotionLogic mtrRight;
 
-//---------------------------------------------------------------------------------------
 // Interupt function for counting left motor encoder pulses
 void encoderIntLeft()  { 
   mtrLeft.incrEncoder();
 }
 
-//---------------------------------------------------------------------------------------
 // Interupt function for counting right motor encoder pulses
 void encoderIntRight()  { 
   mtrRight.incrEncoder();
 }
 
-
-//---------------------------------------------------------------------------------------
 void setMotorOutputs() {
   if (mtrLeft.getOutputFwd()) digitalWrite(PIN_MTR1_DIR_FWD, HIGH);   
   else                        digitalWrite(PIN_MTR1_DIR_FWD, LOW); 
@@ -523,8 +487,7 @@ void setMotorOutputs() {
   else                         digitalWrite(PIN_MTR2_DIR_REV, LOW); 
 }
 
-//======================================================================================
-// Trigger Sonic range finder
+// Trigger Sonic range finder TODO: Determine is using ultrasonic sensor
 void triggerRangeFinder() {
     digitalWrite(PIN_SONIC_TRIGGER, LOW);
     delayMicroseconds(20);
@@ -539,7 +502,6 @@ void triggerRangeFinder() {
     //Serial.println(sonicDistance);
 }
 
-//=======================================================================================
 // Used to display fault codes on the built-in LED
 void faultCodeLED(int count) {
   int i = -1;
@@ -559,7 +521,6 @@ void faultCodeLED(int count) {
   }
 }
 
-//=======================================================================================
 // Toggle the Ardunio built in LED each time this function is executed
 void toggleLED() {
   if (flagLED) {                
@@ -571,10 +532,10 @@ void toggleLED() {
   }
 }
 
-//=======================================================================================
+
 //  This function is called to update the variable information on the display.
 //  Only limited information is updated at a time since the write commands are slow
-//=======================================================================================
+
 void initDisplay() {
 
   // Display is 20 characters wide by 4 lines
