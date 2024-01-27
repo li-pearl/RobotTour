@@ -166,35 +166,35 @@ void loadCommandQueue() {
       commandQueue.add(VEHICLE_TURN_LEFT);
         
 
-      // cmdQueue.add(VEHICLE_FORWARD,830); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_RIGHT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,1000); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,1000); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,1500); 
-      // cmdQueue.add(VEHICLE_TURN_RIGHT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_RIGHT);
-      // cmdQueue.add(VEHICLE_TURN_RIGHT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_LEFT);
-      // cmdQueue.add(VEHICLE_FORWARD,500); 
-      // cmdQueue.add(VEHICLE_TURN_RIGHT);
-      // cmdQueue.add(VEHICLE_FORWARD,420); 
+      // commandQueue.add(VEHICLE_FORWARD,830); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_RIGHT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,1000); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,1000); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,1500); 
+      // commandQueue.add(VEHICLE_TURN_RIGHT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_RIGHT);
+      // commandQueue.add(VEHICLE_TURN_RIGHT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_LEFT);
+      // commandQueue.add(VEHICLE_FORWARD,500); 
+      // commandQueue.add(VEHICLE_TURN_RIGHT);
+      // commandQueue.add(VEHICLE_FORWARD,420); 
 
 
       // This MUST be the last command.  
-      cmdQueue.add(VEHICLE_FINISHED);
+      commandQueue.add(VEHICLE_FINISHED);
 
 }
 
@@ -571,7 +571,7 @@ void updateDisplay() {
 
   switch (printStep) {
     case 0 :
-        cmd = cmdQueue.current();
+        cmd = commandQueue.current();
         if (printLastCmd != cmd) {
           display.setCursor(4,0);
           switch (cmd) {
@@ -751,10 +751,10 @@ void loop() {
   msTimerPrint += usecElapsed;
 
   int newCmd = false;
-  if (cmdQueue.firstScan()) {
+  if (commandQueue.firstScan()) {
     newCmd = true;
     //Serial.print(F("New Vehicle Cmd = "));
-    //Serial.println(cmdQueue.current());
+    //Serial.println(commandQueue.current());
   }
 
   int pbStart = !digitalRead(PIN_PB_START);
@@ -767,10 +767,10 @@ void loop() {
     timerPBStartOff += usecElapsed;
   }
   
-  if (cmdQueue.current() > VEHICLE_START && cmdQueue.current() < VEHICLE_ABORT) {
+  if (commandQueue.current() > VEHICLE_START && commandQueue.current() < VEHICLE_ABORT) {
     if (timerPBStartOn > 100000) {
-      cmdQueue.clear();
-      cmdQueue.add(VEHICLE_ABORT);
+      commandQueue.clear();
+      commandQueue.add(VEHICLE_ABORT);
       mtrLeft.stop();
       mtrRight.stop();
       setMotorOutputs();
@@ -779,10 +779,10 @@ void loop() {
 
   if (flagTimeRun) timerRunTime += usecElapsed;
 
-  switch (cmdQueue.current()) {
+  switch (commandQueue.current()) {
     case VEHICLE_START_WAIT :
       if (timerPBStartOn > 100000) {
-        cmdQueue.next();
+        commandQueue.next();
       }
       timerSonicRange += usecElapsed;
       if (timerSonicRange > 1500000) {
@@ -793,14 +793,14 @@ void loop() {
     case VEHICLE_START :
       timerRunTime = 0;
       if (timerPBStartOff > 100000) {
-        cmdQueue.next();
+        commandQueue.next();
         flagTimeRun = 1;
         flagLastMoveFwd = 0;
       }
       break;
     case VEHICLE_FORWARD :
       if (newCmd) {
-        distance = ((long) cmdQueue.getParameter1() * (long) ENCODER_COUNTS_PER_REV / (long) MM_PER_REV);
+        distance = ((long) commandQueue.getParameter1() * (long) ENCODER_COUNTS_PER_REV / (long) MM_PER_REV);
         speed = speedFwd;
         mtrLeft.startMove(distance,speed);
         mtrRight.startMove(distance,speed);
@@ -809,7 +809,7 @@ void loop() {
       
       if (mtrLeft.isStopped() && mtrRight.isStopped()) {
         setMotorOutputs();
-        cmdQueue.next();
+        commandQueue.next();
       }
       break;
     case VEHICLE_TURN_RIGHT :
@@ -823,7 +823,7 @@ void loop() {
 
       if (mtrLeft.isStopped() && mtrRight.isStopped()) {
         setMotorOutputs();
-        cmdQueue.next();
+        commandQueue.next();
       }      
       break;
     case VEHICLE_TURN_LEFT :
@@ -837,21 +837,21 @@ void loop() {
 
       if (mtrLeft.isStopped() && mtrRight.isStopped()) {
         setMotorOutputs();
-        cmdQueue.next();
+        commandQueue.next();
       }      
       break;
     case VEHICLE_SET_MOVE_SPEED :
-      speedFwd = cmdQueue.getParameter1();
-      cmdQueue.next();
+      speedFwd = commandQueue.getParameter1();
+      commandQueue.next();
       break;
     case VEHICLE_SET_TURN_SPEED :
-      speedTurn = cmdQueue.getParameter1();
-      cmdQueue.next();
+      speedTurn = commandQueue.getParameter1();
+      commandQueue.next();
       break;
     case VEHICLE_SET_ACCEL :
-      mtrLeft.setAccel(cmdQueue.getParameter1());
-      mtrRight.setAccel(cmdQueue.getParameter1());
-      cmdQueue.next();
+      mtrLeft.setAccel(commandQueue.getParameter1());
+      mtrRight.setAccel(commandQueue.getParameter1());
+      commandQueue.next();
       break;
     default :
     case VEHICLE_FINISHED :
